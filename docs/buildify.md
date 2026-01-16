@@ -38,6 +38,10 @@
   - [ ] Pharmacy: Add medicine form with batch tracking and expiry validation
   - [ ] Laboratory: New test order with patient/doctor selection
   - [ ] Chat: Add department filtering and enhanced features
+- [ ] Enhance Hospital Profile and Staff Management
+  - [ ] Add hospital logo upload functionality
+  - [ ] Implement data reset on new hospital registration
+  - [ ] Add staff photo upload during registration
 - [ ] Implement state management for data persistence
 - [ ] Add form validation and error handling
 - [ ] Create confirmation dialogs for critical actions
