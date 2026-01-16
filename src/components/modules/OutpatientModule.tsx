@@ -9,15 +9,111 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { UserPlus, Search, Calendar, Clock, FileText, Stethoscope, Activity } from 'lucide-react';
 import { mockPatients, mockPrescriptions, mockLabTests } from '@/data/mockData';
+import { Patient } from '@/types';
 import { format } from 'date-fns';
+import { toast } from 'sonner';
 
 export const OutpatientModule: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedPatient, setSelectedPatient] = useState<string | null>(null);
+  const [patients, setPatients] = useState(mockPatients);
+  const [isRegisterDialogOpen, setIsRegisterDialogOpen] = useState(false);
 
-  const filteredPatients = mockPatients.filter(p =>
+  // Registration form state
+  const [regForm, setRegForm] = useState({
+    firstName: '',
+    lastName: '',
+    dateOfBirth: '',
+    gender: '' as 'male' | 'female' | 'other' | '',
+    phone: '',
+    email: '',
+    address: '',
+    bloodType: '',
+    allergies: '',
+    insurance: '',
+    emergencyName: '',
+    emergencyPhone: '',
+    emergencyRelationship: '',
+  });
+
+  const resetRegForm = () => {
+    setRegForm({
+      firstName: '',
+      lastName: '',
+      dateOfBirth: '',
+      gender: '',
+      phone: '',
+      email: '',
+      address: '',
+      bloodType: '',
+      allergies: '',
+      insurance: '',
+      emergencyName: '',
+      emergencyPhone: '',
+      emergencyRelationship: '',
+    });
+  };
+
+  const handleRegisterPatient = () => {
+    // Validation
+    if (!regForm.firstName.trim() || !regForm.lastName.trim()) {
+      toast.error('First name and last name are required');
+      return;
+    }
+    if (!regForm.dateOfBirth) {
+      toast.error('Date of birth is required');
+      return;
+    }
+    if (!regForm.gender) {
+      toast.error('Gender is required');
+      return;
+    }
+    if (!regForm.phone.trim()) {
+      toast.error('Phone number is required');
+      return;
+    }
+    if (!regForm.email.trim() || !regForm.email.includes('@')) {
+      toast.error('Valid email is required');
+      return;
+    }
+    if (!regForm.address.trim()) {
+      toast.error('Address is required');
+      return;
+    }
+    if (!regForm.emergencyName.trim() || !regForm.emergencyPhone.trim()) {
+      toast.error('Emergency contact information is required');
+      return;
+    }
+
+    const newPatient: Patient = {
+      id: `P${String(patients.length + 1).padStart(3, '0')}`,
+      firstName: regForm.firstName,
+      lastName: regForm.lastName,
+      dateOfBirth: regForm.dateOfBirth,
+      gender: regForm.gender as 'male' | 'female' | 'other',
+      phone: regForm.phone,
+      email: regForm.email,
+      address: regForm.address,
+      bloodType: regForm.bloodType || undefined,
+      allergies: regForm.allergies ? regForm.allergies.split(',').map(a => a.trim()) : [],
+      insurance: regForm.insurance || undefined,
+      emergencyContact: {
+        name: regForm.emergencyName,
+        phone: regForm.emergencyPhone,
+        relationship: regForm.emergencyRelationship,
+      },
+    };
+
+    setPatients([...patients, newPatient]);
+    toast.success(`${regForm.firstName} ${regForm.lastName} registered successfully`);
+    setIsRegisterDialogOpen(false);
+    resetRegForm();
+  };
+
+  const filteredPatients = patients.filter(p =>
     p.firstName.toLowerCase().includes(searchTerm.toLowerCase()) ||
     p.lastName.toLowerCase().includes(searchTerm.toLowerCase()) ||
     p.id.toLowerCase().includes(searchTerm.toLowerCase())
@@ -38,54 +134,179 @@ export const OutpatientModule: React.FC = () => {
           <h2 className="text-3xl font-bold text-foreground">Outpatient Management</h2>
           <p className="text-muted-foreground mt-1">Manage outpatient appointments and visits</p>
         </div>
-        <Dialog>
+        <Dialog open={isRegisterDialogOpen} onOpenChange={setIsRegisterDialogOpen}>
           <DialogTrigger asChild>
-            <Button>
+            <Button onClick={() => resetRegForm()}>
               <UserPlus className="h-4 w-4 mr-2" />
               Register Patient
             </Button>
           </DialogTrigger>
-          <DialogContent className="max-w-2xl">
+          <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
             <DialogHeader>
               <DialogTitle>Register New Patient</DialogTitle>
               <DialogDescription>Enter patient information to create a new record</DialogDescription>
             </DialogHeader>
             <div className="grid gap-4 py-4">
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="firstName">First Name</Label>
-                  <Input id="firstName" placeholder="John" />
+              <div className="space-y-4">
+                <h4 className="font-semibold text-foreground">Personal Information</h4>
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="firstName">First Name *</Label>
+                    <Input 
+                      id="firstName" 
+                      value={regForm.firstName}
+                      onChange={(e) => setRegForm({ ...regForm, firstName: e.target.value })}
+                      placeholder="John" 
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="lastName">Last Name *</Label>
+                    <Input 
+                      id="lastName" 
+                      value={regForm.lastName}
+                      onChange={(e) => setRegForm({ ...regForm, lastName: e.target.value })}
+                      placeholder="Doe" 
+                    />
+                  </div>
                 </div>
-                <div className="space-y-2">
-                  <Label htmlFor="lastName">Last Name</Label>
-                  <Input id="lastName" placeholder="Doe" />
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="dob">Date of Birth *</Label>
+                    <Input 
+                      id="dob" 
+                      type="date" 
+                      value={regForm.dateOfBirth}
+                      onChange={(e) => setRegForm({ ...regForm, dateOfBirth: e.target.value })}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="gender">Gender *</Label>
+                    <Select value={regForm.gender} onValueChange={(value) => setRegForm({ ...regForm, gender: value as 'male' | 'female' | 'other' })}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select gender" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="male">Male</SelectItem>
+                        <SelectItem value="female">Female</SelectItem>
+                        <SelectItem value="other">Other</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
                 </div>
               </div>
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="dob">Date of Birth</Label>
-                  <Input id="dob" type="date" />
+
+              <div className="space-y-4">
+                <h4 className="font-semibold text-foreground">Contact Information</h4>
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="phone">Phone *</Label>
+                    <Input 
+                      id="phone" 
+                      value={regForm.phone}
+                      onChange={(e) => setRegForm({ ...regForm, phone: e.target.value })}
+                      placeholder="+1 (555) 000-0000" 
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="email">Email *</Label>
+                    <Input 
+                      id="email" 
+                      type="email" 
+                      value={regForm.email}
+                      onChange={(e) => setRegForm({ ...regForm, email: e.target.value })}
+                      placeholder="patient@email.com" 
+                    />
+                  </div>
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="gender">Gender</Label>
-                  <Input id="gender" placeholder="Male/Female/Other" />
+                  <Label htmlFor="address">Address *</Label>
+                  <Textarea 
+                    id="address" 
+                    value={regForm.address}
+                    onChange={(e) => setRegForm({ ...regForm, address: e.target.value })}
+                    placeholder="Full address" 
+                  />
                 </div>
               </div>
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="phone">Phone</Label>
-                  <Input id="phone" placeholder="+1 (555) 000-0000" />
+
+              <div className="space-y-4">
+                <h4 className="font-semibold text-foreground">Medical Information</h4>
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="bloodType">Blood Type</Label>
+                    <Select value={regForm.bloodType} onValueChange={(value) => setRegForm({ ...regForm, bloodType: value })}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select blood type" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="A+">A+</SelectItem>
+                        <SelectItem value="A-">A-</SelectItem>
+                        <SelectItem value="B+">B+</SelectItem>
+                        <SelectItem value="B-">B-</SelectItem>
+                        <SelectItem value="AB+">AB+</SelectItem>
+                        <SelectItem value="AB-">AB-</SelectItem>
+                        <SelectItem value="O+">O+</SelectItem>
+                        <SelectItem value="O-">O-</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="insurance">Insurance Provider</Label>
+                    <Input 
+                      id="insurance" 
+                      value={regForm.insurance}
+                      onChange={(e) => setRegForm({ ...regForm, insurance: e.target.value })}
+                      placeholder="Blue Cross, Aetna, etc." 
+                    />
+                  </div>
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="email">Email</Label>
-                  <Input id="email" type="email" placeholder="patient@email.com" />
+                  <Label htmlFor="allergies">Allergies (comma-separated)</Label>
+                  <Input 
+                    id="allergies" 
+                    value={regForm.allergies}
+                    onChange={(e) => setRegForm({ ...regForm, allergies: e.target.value })}
+                    placeholder="Penicillin, Peanuts, etc." 
+                  />
                 </div>
               </div>
-              <div className="space-y-2">
-                <Label htmlFor="address">Address</Label>
-                <Textarea id="address" placeholder="Full address" />
+
+              <div className="space-y-4">
+                <h4 className="font-semibold text-foreground">Emergency Contact *</h4>
+                <div className="grid grid-cols-3 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="emergencyName">Name *</Label>
+                    <Input 
+                      id="emergencyName" 
+                      value={regForm.emergencyName}
+                      onChange={(e) => setRegForm({ ...regForm, emergencyName: e.target.value })}
+                      placeholder="Jane Doe" 
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="emergencyPhone">Phone *</Label>
+                    <Input 
+                      id="emergencyPhone" 
+                      value={regForm.emergencyPhone}
+                      onChange={(e) => setRegForm({ ...regForm, emergencyPhone: e.target.value })}
+                      placeholder="+1 (555) 000-0001" 
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="emergencyRelationship">Relationship</Label>
+                    <Input 
+                      id="emergencyRelationship" 
+                      value={regForm.emergencyRelationship}
+                      onChange={(e) => setRegForm({ ...regForm, emergencyRelationship: e.target.value })}
+                      placeholder="Spouse, Parent, etc." 
+                    />
+                  </div>
+                </div>
               </div>
-              <Button className="w-full">Register Patient</Button>
+
+              <Button onClick={handleRegisterPatient} className="w-full">
+                Register Patient
+              </Button>
             </div>
           </DialogContent>
         </Dialog>

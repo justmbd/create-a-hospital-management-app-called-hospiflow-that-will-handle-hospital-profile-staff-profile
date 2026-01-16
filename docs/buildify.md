@@ -31,13 +31,13 @@
 - [x] Complete HospiFlow MVP with all core features
 - [x] Enhance sub-menus with dynamic tabs and cross-module data integration
 - [ ] Add interactive CRUD operations across all modules
-  - [ ] Hospital Profile: Edit and save functionality
-  - [ ] Staff Management: Add new staff with form validation
-  - [ ] Outpatient: Register new patients with complete forms
-  - [ ] Inpatient: Admit patient workflow with bed assignment
-  - [ ] Pharmacy: Add medicine to inventory with batch tracking
-  - [ ] Laboratory: Create new test orders with patient selection
-  - [ ] Chat: Real-time messaging with department filtering
+  - [x] Hospital Profile: Complete edit/save with cancel and validation
+  - [x] Staff Management: Add/edit staff forms with role dropdown and validation
+  - [x] Outpatient: Complete patient registration with full form fields
+  - [ ] Inpatient: Admit patient with bed selection and availability
+  - [ ] Pharmacy: Add medicine form with batch tracking and expiry validation
+  - [ ] Laboratory: New test order with patient/doctor selection
+  - [ ] Chat: Add department filtering and enhanced features
 - [ ] Implement state management for data persistence
 - [ ] Add form validation and error handling
 - [ ] Create confirmation dialogs for critical actions

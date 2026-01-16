@@ -11,11 +11,45 @@ import { toast } from 'sonner';
 
 export const HospitalProfile: React.FC = () => {
   const [hospital, setHospital] = useState(mockHospital);
+  const [originalHospital, setOriginalHospital] = useState(mockHospital);
   const [isEditing, setIsEditing] = useState(false);
 
+  const handleEdit = () => {
+    setOriginalHospital(hospital);
+    setIsEditing(true);
+  };
+
   const handleSave = () => {
+    // Validation
+    if (!hospital.name.trim()) {
+      toast.error('Hospital name is required');
+      return;
+    }
+    if (!hospital.phone.trim()) {
+      toast.error('Phone number is required');
+      return;
+    }
+    if (!hospital.email.trim()) {
+      toast.error('Email address is required');
+      return;
+    }
+    if (!hospital.email.includes('@')) {
+      toast.error('Please enter a valid email address');
+      return;
+    }
+    if (!hospital.address.trim()) {
+      toast.error('Address is required');
+      return;
+    }
+
     toast.success('Hospital profile updated successfully');
     setIsEditing(false);
+  };
+
+  const handleCancel = () => {
+    setHospital(originalHospital);
+    setIsEditing(false);
+    toast.info('Changes discarded');
   };
 
   return (
@@ -25,9 +59,22 @@ export const HospitalProfile: React.FC = () => {
           <h2 className="text-3xl font-bold text-foreground">Hospital Profile</h2>
           <p className="text-muted-foreground mt-1">Manage hospital information and settings</p>
         </div>
-        <Button onClick={() => isEditing ? handleSave() : setIsEditing(true)}>
-          {isEditing ? 'Save Changes' : 'Edit Profile'}
-        </Button>
+        <div className="flex gap-2">
+          {isEditing ? (
+            <>
+              <Button variant="outline" onClick={handleCancel}>
+                Cancel
+              </Button>
+              <Button onClick={handleSave}>
+                Save Changes
+              </Button>
+            </>
+          ) : (
+            <Button onClick={handleEdit}>
+              Edit Profile
+            </Button>
+          )}
+        </div>
       </div>
 
       <div className="grid gap-6 md:grid-cols-2">
