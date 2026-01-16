@@ -7,6 +7,10 @@
 - Staff Management
 - Communication (Staff Chat)
 - Security & User Management (Authentication, RBAC)
+- Appointment Scheduling System
+- Billing & Invoicing Module
+- Reporting & Analytics Dashboard
+- Data Persistence (Supabase Integration)
 
 ### Designs
 - Medical-themed color scheme (blue/green)
@@ -25,3 +29,7 @@
 - [x] Create staff communication/chat
 - [x] Integrate all modules with navigation
 - [x] Complete HospiFlow MVP with all core features
+- [ ] Setup Supabase integration for data persistence
+- [ ] Create appointment scheduling system
+- [ ] Build billing and invoicing module
+- [ ] Create reporting and analytics dashboard
