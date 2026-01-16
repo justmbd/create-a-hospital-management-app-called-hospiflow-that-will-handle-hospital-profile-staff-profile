@@ -30,6 +30,17 @@
 - [x] Integrate all modules with navigation
 - [x] Complete HospiFlow MVP with all core features
 - [x] Enhance sub-menus with dynamic tabs and cross-module data integration
+- [ ] Add interactive CRUD operations across all modules
+  - [ ] Hospital Profile: Edit and save functionality
+  - [ ] Staff Management: Add new staff with form validation
+  - [ ] Outpatient: Register new patients with complete forms
+  - [ ] Inpatient: Admit patient workflow with bed assignment
+  - [ ] Pharmacy: Add medicine to inventory with batch tracking
+  - [ ] Laboratory: Create new test orders with patient selection
+  - [ ] Chat: Real-time messaging with department filtering
+- [ ] Implement state management for data persistence
+- [ ] Add form validation and error handling
+- [ ] Create confirmation dialogs for critical actions
 - [ ] Setup Supabase integration for data persistence
 - [ ] Create appointment scheduling system
 - [ ] Build billing and invoicing module
