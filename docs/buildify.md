@@ -29,6 +29,7 @@
 - [x] Create staff communication/chat
 - [x] Integrate all modules with navigation
 - [x] Complete HospiFlow MVP with all core features
+- [x] Enhance sub-menus with dynamic tabs and cross-module data integration
 - [ ] Setup Supabase integration for data persistence
 - [ ] Create appointment scheduling system
 - [ ] Build billing and invoicing module

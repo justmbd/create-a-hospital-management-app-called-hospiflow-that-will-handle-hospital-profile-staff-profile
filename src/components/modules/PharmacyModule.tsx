@@ -6,7 +6,9 @@ import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Pill, Search, AlertTriangle, Package } from 'lucide-react';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Label } from '@/components/ui/label';
+import { Pill, Search, AlertTriangle, Package, FileText } from 'lucide-react';
 import { mockMedicines, mockPrescriptions, mockPatients } from '@/data/mockData';
 import { format } from 'date-fns';
 
@@ -26,6 +28,11 @@ export const PharmacyModule: React.FC = () => {
   const getPatientName = (patientId: string) => {
     const patient = mockPatients.find(p => p.id === patientId);
     return patient ? `${patient.firstName} ${patient.lastName}` : 'Unknown';
+  };
+
+  const getMedicineName = (medicineId: string) => {
+    const medicine = medicines.find(m => m.id === medicineId);
+    return medicine ? medicine.name : 'Unknown Medicine';
   };
 
   return (
@@ -197,9 +204,75 @@ export const PharmacyModule: React.FC = () => {
                         </Badge>
                       </TableCell>
                       <TableCell>
-                        <Button variant="outline" size="sm">
-                          {prescription.status === 'pending' ? 'Dispense' : 'View'}
-                        </Button>
+                        <Dialog>
+                          <DialogTrigger asChild>
+                            <Button variant="outline" size="sm">
+                              {prescription.status === 'pending' ? 'Dispense' : 'View Details'}
+                            </Button>
+                          </DialogTrigger>
+                          <DialogContent className="max-w-2xl">
+                            <DialogHeader>
+                              <DialogTitle className="flex items-center gap-2">
+                                <FileText className="h-5 w-5" />
+                                Prescription Details - {prescription.id}
+                              </DialogTitle>
+                              <DialogDescription>
+                                Patient: {getPatientName(prescription.patientId)} | Date: {format(new Date(prescription.date), 'MMM dd, yyyy')}
+                              </DialogDescription>
+                            </DialogHeader>
+                            <div className="space-y-4">
+                              <div className="grid grid-cols-2 gap-4">
+                                <div>
+                                  <Label className="text-muted-foreground">Prescription ID</Label>
+                                  <p className="font-medium text-foreground">{prescription.id}</p>
+                                </div>
+                                <div>
+                                  <Label className="text-muted-foreground">Status</Label>
+                                  <Badge className={prescription.status === 'dispensed' ? 'bg-success text-white' : 'bg-warning text-white'}>
+                                    {prescription.status}
+                                  </Badge>
+                                </div>
+                              </div>
+                              
+                              <div>
+                                <h4 className="font-semibold text-foreground mb-3">Prescribed Medicines</h4>
+                                <div className="space-y-3">
+                                  {prescription.medicines.map((med, idx) => (
+                                    <div key={idx} className="p-4 border rounded-lg bg-muted">
+                                      <div className="flex justify-between items-start mb-2">
+                                        <div>
+                                          <p className="font-medium text-foreground">{getMedicineName(med.medicineId)}</p>
+                                          <p className="text-sm text-muted-foreground">Medicine ID: {med.medicineId}</p>
+                                        </div>
+                                      </div>
+                                      <div className="grid grid-cols-3 gap-2 text-sm mt-2">
+                                        <div>
+                                          <Label className="text-muted-foreground">Dosage</Label>
+                                          <p className="font-medium text-foreground">{med.dosage}</p>
+                                        </div>
+                                        <div>
+                                          <Label className="text-muted-foreground">Frequency</Label>
+                                          <p className="font-medium text-foreground">{med.frequency}</p>
+                                        </div>
+                                        <div>
+                                          <Label className="text-muted-foreground">Duration</Label>
+                                          <p className="font-medium text-foreground">{med.duration}</p>
+                                        </div>
+                                      </div>
+                                    </div>
+                                  ))}
+                                </div>
+                              </div>
+
+                              {prescription.status === 'pending' && (
+                                <div className="flex gap-2 pt-4">
+                                  <Button className="flex-1">Mark as Dispensed</Button>
+                                  <Button variant="outline" className="flex-1">Print Prescription</Button>
+                                </div>
+                              )}
+                            </div>
+                          </DialogContent>
+                        </Dialog>
                       </TableCell>
                     </TableRow>
                   ))}
