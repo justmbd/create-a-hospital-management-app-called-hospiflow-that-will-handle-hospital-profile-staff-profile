@@ -3,19 +3,35 @@ import React, { useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { Label } from '@/components/ui/label';
 import { Pill, Search, AlertTriangle, Package, FileText } from 'lucide-react';
 import { mockMedicines, mockPrescriptions, mockPatients } from '@/data/mockData';
+import { Medicine } from '@/types';
 import { format } from 'date-fns';
+import { toast } from 'sonner';
 
 export const PharmacyModule: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState('');
-  const [medicines] = useState(mockMedicines);
+  const [medicines, setMedicines] = useState(mockMedicines);
   const [prescriptions] = useState(mockPrescriptions);
+  const [isAddMedicineDialogOpen, setIsAddMedicineDialogOpen] = useState(false);
+  
+  // Form state
+  const [formData, setFormData] = useState({
+    name: '',
+    category: '',
+    manufacturer: '',
+    batchNumber: '',
+    expiryDate: '',
+    quantity: '',
+    reorderLevel: '',
+    price: '',
+  });
 
   const filteredMedicines = medicines.filter(m =>
     m.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -35,6 +51,81 @@ export const PharmacyModule: React.FC = () => {
     return medicine ? medicine.name : 'Unknown Medicine';
   };
 
+  const categories = ['Antibiotic', 'Analgesic', 'Antiviral', 'Antihistamine', 'Antacid', 'Vitamin', 'Other'];
+
+  const resetForm = () => {
+    setFormData({
+      name: '',
+      category: '',
+      manufacturer: '',
+      batchNumber: '',
+      expiryDate: '',
+      quantity: '',
+      reorderLevel: '',
+      price: '',
+    });
+  };
+
+  const handleAddMedicine = () => {
+    // Validation
+    if (!formData.name.trim()) {
+      toast.error('Please enter medicine name');
+      return;
+    }
+    if (!formData.category) {
+      toast.error('Please select category');
+      return;
+    }
+    if (!formData.manufacturer.trim()) {
+      toast.error('Please enter manufacturer');
+      return;
+    }
+    if (!formData.batchNumber.trim()) {
+      toast.error('Please enter batch number');
+      return;
+    }
+    if (!formData.expiryDate) {
+      toast.error('Please enter expiry date');
+      return;
+    }
+    if (!formData.quantity || parseInt(formData.quantity) <= 0) {
+      toast.error('Please enter valid quantity');
+      return;
+    }
+    if (!formData.reorderLevel || parseInt(formData.reorderLevel) <= 0) {
+      toast.error('Please enter valid reorder level');
+      return;
+    }
+    if (!formData.price || parseFloat(formData.price) <= 0) {
+      toast.error('Please enter valid price');
+      return;
+    }
+
+    // Check if expiry date is in the future
+    const expiryDate = new Date(formData.expiryDate);
+    if (expiryDate <= new Date()) {
+      toast.error('Expiry date must be in the future');
+      return;
+    }
+
+    const newMedicine: Medicine = {
+      id: `M${String(medicines.length + 1).padStart(3, '0')}`,
+      name: formData.name,
+      category: formData.category,
+      manufacturer: formData.manufacturer,
+      batchNumber: formData.batchNumber,
+      expiryDate: formData.expiryDate,
+      quantity: parseInt(formData.quantity),
+      reorderLevel: parseInt(formData.reorderLevel),
+      price: parseFloat(formData.price),
+    };
+
+    setMedicines([...medicines, newMedicine]);
+    toast.success('Medicine added successfully');
+    setIsAddMedicineDialogOpen(false);
+    resetForm();
+  };
+
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
@@ -42,10 +133,127 @@ export const PharmacyModule: React.FC = () => {
           <h2 className="text-3xl font-bold text-foreground">Pharmacy Management</h2>
           <p className="text-muted-foreground mt-1">Manage medicines, inventory, and prescriptions</p>
         </div>
-        <Button>
-          <Package className="h-4 w-4 mr-2" />
-          Add Medicine
-        </Button>
+        <Dialog open={isAddMedicineDialogOpen} onOpenChange={setIsAddMedicineDialogOpen}>
+          <DialogTrigger asChild>
+            <Button>
+              <Package className="h-4 w-4 mr-2" />
+              Add Medicine
+            </Button>
+          </DialogTrigger>
+          <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle>Add New Medicine</DialogTitle>
+              <DialogDescription>Enter medicine details to add to inventory</DialogDescription>
+            </DialogHeader>
+            <div className="grid gap-4 py-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="name">Medicine Name *</Label>
+                  <Input
+                    id="name"
+                    placeholder="e.g., Amoxicillin"
+                    value={formData.name}
+                    onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="category">Category *</Label>
+                  <Select value={formData.category} onValueChange={(value) => setFormData({ ...formData, category: value })}>
+                    <SelectTrigger id="category">
+                      <SelectValue placeholder="Select category" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {categories.map((cat) => (
+                        <SelectItem key={cat} value={cat}>
+                          {cat}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="manufacturer">Manufacturer *</Label>
+                  <Input
+                    id="manufacturer"
+                    placeholder="e.g., Pfizer"
+                    value={formData.manufacturer}
+                    onChange={(e) => setFormData({ ...formData, manufacturer: e.target.value })}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="batchNumber">Batch Number *</Label>
+                  <Input
+                    id="batchNumber"
+                    placeholder="e.g., BN-2024-001"
+                    value={formData.batchNumber}
+                    onChange={(e) => setFormData({ ...formData, batchNumber: e.target.value })}
+                  />
+                </div>
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="expiryDate">Expiry Date *</Label>
+                  <Input
+                    id="expiryDate"
+                    type="date"
+                    value={formData.expiryDate}
+                    onChange={(e) => setFormData({ ...formData, expiryDate: e.target.value })}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="price">Price per Unit ($) *</Label>
+                  <Input
+                    id="price"
+                    type="number"
+                    step="0.01"
+                    min="0"
+                    placeholder="0.00"
+                    value={formData.price}
+                    onChange={(e) => setFormData({ ...formData, price: e.target.value })}
+                  />
+                </div>
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="quantity">Quantity *</Label>
+                  <Input
+                    id="quantity"
+                    type="number"
+                    min="0"
+                    placeholder="0"
+                    value={formData.quantity}
+                    onChange={(e) => setFormData({ ...formData, quantity: e.target.value })}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="reorderLevel">Reorder Level *</Label>
+                  <Input
+                    id="reorderLevel"
+                    type="number"
+                    min="0"
+                    placeholder="0"
+                    value={formData.reorderLevel}
+                    onChange={(e) => setFormData({ ...formData, reorderLevel: e.target.value })}
+                  />
+                  <p className="text-xs text-muted-foreground">Alert when stock falls below this level</p>
+                </div>
+              </div>
+            </div>
+            <div className="flex justify-end gap-2">
+              <Button variant="outline" onClick={() => {
+                setIsAddMedicineDialogOpen(false);
+                resetForm();
+              }}>
+                Cancel
+              </Button>
+              <Button onClick={handleAddMedicine}>
+                Add Medicine
+              </Button>
+            </div>
+          </DialogContent>
+        </Dialog>
       </div>
 
       <div className="grid gap-4 md:grid-cols-4">

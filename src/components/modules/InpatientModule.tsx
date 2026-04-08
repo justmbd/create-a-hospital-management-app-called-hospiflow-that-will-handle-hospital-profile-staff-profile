@@ -3,13 +3,31 @@ import React, { useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { BedDouble, UserPlus } from 'lucide-react';
-import { mockAdmissions, mockPatients } from '@/data/mockData';
+import { mockAdmissions, mockPatients, mockStaff } from '@/data/mockData';
+import { Admission } from '@/types';
 import { format } from 'date-fns';
+import { toast } from 'sonner';
 
 export const InpatientModule: React.FC = () => {
-  const [admissions] = useState(mockAdmissions);
+  const [admissions, setAdmissions] = useState(mockAdmissions);
+  const [isAdmitDialogOpen, setIsAdmitDialogOpen] = useState(false);
+  
+  // Form state
+  const [formData, setFormData] = useState({
+    patientId: '',
+    wardId: '',
+    bedNumber: '',
+    diagnosis: '',
+    admittingDoctorId: '',
+    notes: '',
+  });
 
   const getPatientName = (patientId: string) => {
     const patient = mockPatients.find(p => p.id === patientId);
@@ -19,6 +37,67 @@ export const InpatientModule: React.FC = () => {
   const activeAdmissions = admissions.filter(a => a.status === 'active');
   const dischargedAdmissions = admissions.filter(a => a.status === 'discharged');
 
+  const doctors = mockStaff.filter(s => s.role === 'doctor');
+  
+  const wards = [
+    { id: 'W001', name: 'General Ward', availableBeds: 15 },
+    { id: 'W002', name: 'ICU', availableBeds: 5 },
+    { id: 'W003', name: 'Pediatric Ward', availableBeds: 8 },
+    { id: 'W004', name: 'Maternity Ward', availableBeds: 10 },
+  ];
+
+  const resetForm = () => {
+    setFormData({
+      patientId: '',
+      wardId: '',
+      bedNumber: '',
+      diagnosis: '',
+      admittingDoctorId: '',
+      notes: '',
+    });
+  };
+
+  const handleAdmitPatient = () => {
+    // Validation
+    if (!formData.patientId) {
+      toast.error('Please select a patient');
+      return;
+    }
+    if (!formData.wardId) {
+      toast.error('Please select a ward');
+      return;
+    }
+    if (!formData.bedNumber) {
+      toast.error('Please enter bed number');
+      return;
+    }
+    if (!formData.diagnosis.trim()) {
+      toast.error('Please enter diagnosis');
+      return;
+    }
+    if (!formData.admittingDoctorId) {
+      toast.error('Please select admitting doctor');
+      return;
+    }
+
+    const newAdmission: Admission = {
+      id: `A${String(admissions.length + 1).padStart(3, '0')}`,
+      patientId: formData.patientId,
+      wardId: formData.wardId,
+      bedNumber: formData.bedNumber,
+      admissionDate: new Date().toISOString().split('T')[0],
+      diagnosis: formData.diagnosis,
+      admittingDoctorId: formData.admittingDoctorId,
+      status: 'active',
+      notes: formData.notes,
+    };
+
+    setAdmissions([...admissions, newAdmission]);
+    toast.success('Patient admitted successfully');
+    setIsAdmitDialogOpen(false);
+    resetForm();
+  };
+
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
@@ -26,10 +105,111 @@ export const InpatientModule: React.FC = () => {
           <h2 className="text-3xl font-bold text-foreground">Inpatient Management</h2>
           <p className="text-muted-foreground mt-1">Manage hospital admissions and ward assignments</p>
         </div>
-        <Button>
-          <UserPlus className="h-4 w-4 mr-2" />
-          Admit Patient
-        </Button>
+        <Dialog open={isAdmitDialogOpen} onOpenChange={setIsAdmitDialogOpen}>
+          <DialogTrigger asChild>
+            <Button>
+              <UserPlus className="h-4 w-4 mr-2" />
+              Admit Patient
+            </Button>
+          </DialogTrigger>
+          <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle>Admit New Patient</DialogTitle>
+              <DialogDescription>Enter patient admission details</DialogDescription>
+            </DialogHeader>
+            <div className="grid gap-4 py-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="patient">Patient *</Label>
+                  <Select value={formData.patientId} onValueChange={(value) => setFormData({ ...formData, patientId: value })}>
+                    <SelectTrigger id="patient">
+                      <SelectValue placeholder="Select patient" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {mockPatients.map((patient) => (
+                        <SelectItem key={patient.id} value={patient.id}>
+                          {patient.firstName} {patient.lastName} - {patient.id}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="ward">Ward *</Label>
+                  <Select value={formData.wardId} onValueChange={(value) => setFormData({ ...formData, wardId: value })}>
+                    <SelectTrigger id="ward">
+                      <SelectValue placeholder="Select ward" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {wards.map((ward) => (
+                        <SelectItem key={ward.id} value={ward.id}>
+                          {ward.name} ({ward.availableBeds} beds available)
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="bedNumber">Bed Number *</Label>
+                  <Input
+                    id="bedNumber"
+                    placeholder="e.g., B-101"
+                    value={formData.bedNumber}
+                    onChange={(e) => setFormData({ ...formData, bedNumber: e.target.value })}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="doctor">Admitting Doctor *</Label>
+                  <Select value={formData.admittingDoctorId} onValueChange={(value) => setFormData({ ...formData, admittingDoctorId: value })}>
+                    <SelectTrigger id="doctor">
+                      <SelectValue placeholder="Select doctor" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {doctors.map((doctor) => (
+                        <SelectItem key={doctor.id} value={doctor.id}>
+                          Dr. {doctor.firstName} {doctor.lastName} - {doctor.department}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="diagnosis">Diagnosis *</Label>
+                <Textarea
+                  id="diagnosis"
+                  placeholder="Enter primary diagnosis"
+                  value={formData.diagnosis}
+                  onChange={(e) => setFormData({ ...formData, diagnosis: e.target.value })}
+                  rows={3}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="notes">Additional Notes</Label>
+                <Textarea
+                  id="notes"
+                  placeholder="Enter any additional notes or special instructions"
+                  value={formData.notes}
+                  onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
+                  rows={3}
+                />
+              </div>
+            </div>
+            <div className="flex justify-end gap-2">
+              <Button variant="outline" onClick={() => {
+                setIsAdmitDialogOpen(false);
+                resetForm();
+              }}>
+                Cancel
+              </Button>
+              <Button onClick={handleAdmitPatient}>
+                Admit Patient
+              </Button>
+            </div>
+          </DialogContent>
+        </Dialog>
       </div>
 
       <div className="grid gap-4 md:grid-cols-3">

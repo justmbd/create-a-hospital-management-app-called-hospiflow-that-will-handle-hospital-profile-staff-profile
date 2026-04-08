@@ -2,18 +2,32 @@
 import React, { useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { FlaskConical, Plus, FileText, User } from 'lucide-react';
-import { mockLabTests, mockPatients } from '@/data/mockData';
+import { mockLabTests, mockPatients, mockStaff } from '@/data/mockData';
+import { LabTest } from '@/types';
 import { format } from 'date-fns';
+import { toast } from 'sonner';
 
 export const LaboratoryModule: React.FC = () => {
-  const [labTests] = useState(mockLabTests);
+  const [labTests, setLabTests] = useState(mockLabTests);
+  const [isNewTestDialogOpen, setIsNewTestDialogOpen] = useState(false);
+  
+  // Form state
+  const [formData, setFormData] = useState({
+    patientId: '',
+    testType: '',
+    orderedByDoctorId: '',
+    priority: 'routine' as 'routine' | 'urgent' | 'stat',
+    notes: '',
+  });
 
   const getPatientName = (patientId: string) => {
     const patient = mockPatients.find(p => p.id === patientId);
@@ -37,6 +51,66 @@ export const LaboratoryModule: React.FC = () => {
     return styles[status] || 'bg-muted text-muted-foreground';
   };
 
+  const doctors = mockStaff.filter(s => s.role === 'doctor');
+  
+  const testTypes = [
+    'Complete Blood Count (CBC)',
+    'Blood Glucose',
+    'Lipid Panel',
+    'Liver Function Test',
+    'Kidney Function Test',
+    'Thyroid Function Test',
+    'Urinalysis',
+    'X-Ray',
+    'CT Scan',
+    'MRI',
+    'Ultrasound',
+    'ECG',
+    'Other'
+  ];
+
+  const resetForm = () => {
+    setFormData({
+      patientId: '',
+      testType: '',
+      orderedByDoctorId: '',
+      priority: 'routine',
+      notes: '',
+    });
+  };
+
+  const handleNewTestOrder = () => {
+    // Validation
+    if (!formData.patientId) {
+      toast.error('Please select a patient');
+      return;
+    }
+    if (!formData.testType) {
+      toast.error('Please select test type');
+      return;
+    }
+    if (!formData.orderedByDoctorId) {
+      toast.error('Please select ordering doctor');
+      return;
+    }
+
+    const newTest: LabTest = {
+      id: `LT${String(labTests.length + 1).padStart(3, '0')}`,
+      patientId: formData.patientId,
+      testType: formData.testType,
+      orderedDate: new Date().toISOString().split('T')[0],
+      orderedByDoctorId: formData.orderedByDoctorId,
+      status: 'pending',
+      priority: formData.priority,
+      notes: formData.notes,
+    };
+
+    setLabTests([...labTests, newTest]);
+    toast.success('Lab test order created successfully');
+    setIsNewTestDialogOpen(false);
+    resetForm();
+  };
+
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
@@ -44,10 +118,111 @@ export const LaboratoryModule: React.FC = () => {
           <h2 className="text-3xl font-bold text-foreground">Laboratory Management</h2>
           <p className="text-muted-foreground mt-1">Manage lab tests and results</p>
         </div>
-        <Button>
-          <Plus className="h-4 w-4 mr-2" />
-          New Test Order
-        </Button>
+        <Dialog open={isNewTestDialogOpen} onOpenChange={setIsNewTestDialogOpen}>
+          <DialogTrigger asChild>
+            <Button>
+              <Plus className="h-4 w-4 mr-2" />
+              New Test Order
+            </Button>
+          </DialogTrigger>
+          <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle>Create New Test Order</DialogTitle>
+              <DialogDescription>Enter laboratory test order details</DialogDescription>
+            </DialogHeader>
+            <div className="grid gap-4 py-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="patient">Patient *</Label>
+                  <Select value={formData.patientId} onValueChange={(value) => setFormData({ ...formData, patientId: value })}>
+                    <SelectTrigger id="patient">
+                      <SelectValue placeholder="Select patient" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {mockPatients.map((patient) => (
+                        <SelectItem key={patient.id} value={patient.id}>
+                          {patient.firstName} {patient.lastName} - {patient.id}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="testType">Test Type *</Label>
+                  <Select value={formData.testType} onValueChange={(value) => setFormData({ ...formData, testType: value })}>
+                    <SelectTrigger id="testType">
+                      <SelectValue placeholder="Select test type" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {testTypes.map((test) => (
+                        <SelectItem key={test} value={test}>
+                          {test}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="doctor">Ordering Doctor *</Label>
+                  <Select value={formData.orderedByDoctorId} onValueChange={(value) => setFormData({ ...formData, orderedByDoctorId: value })}>
+                    <SelectTrigger id="doctor">
+                      <SelectValue placeholder="Select doctor" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {doctors.map((doctor) => (
+                        <SelectItem key={doctor.id} value={doctor.id}>
+                          Dr. {doctor.firstName} {doctor.lastName} - {doctor.department}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="priority">Priority *</Label>
+                  <Select value={formData.priority} onValueChange={(value) => setFormData({ ...formData, priority: value as 'routine' | 'urgent' | 'stat' })}>
+                    <SelectTrigger id="priority">
+                      <SelectValue placeholder="Select priority" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="routine">Routine</SelectItem>
+                      <SelectItem value="urgent">Urgent</SelectItem>
+                      <SelectItem value="stat">STAT (Immediate)</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="notes">Clinical Notes</Label>
+                <Textarea
+                  id="notes"
+                  placeholder="Enter any clinical notes or special instructions"
+                  value={formData.notes}
+                  onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
+                  rows={4}
+                />
+              </div>
+              <div className="bg-muted p-3 rounded-lg">
+                <p className="text-sm text-muted-foreground">
+                  <strong>Note:</strong> Test orders will be sent to the laboratory for processing. 
+                  Results will be available once the test is completed.
+                </p>
+              </div>
+            </div>
+            <div className="flex justify-end gap-2">
+              <Button variant="outline" onClick={() => {
+                setIsNewTestDialogOpen(false);
+                resetForm();
+              }}>
+                Cancel
+              </Button>
+              <Button onClick={handleNewTestOrder}>
+                Create Order
+              </Button>
+            </div>
+          </DialogContent>
+        </Dialog>
       </div>
 
       <div className="grid gap-4 md:grid-cols-4">

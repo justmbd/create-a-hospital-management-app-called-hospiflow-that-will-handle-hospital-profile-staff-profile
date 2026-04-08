@@ -1,10 +1,14 @@
 
 import React from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Users, BedDouble, Pill, FlaskConical, Activity, TrendingUp } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Users, BedDouble, Pill, FlaskConical, Activity, TrendingUp, ArrowRight } from 'lucide-react';
 import { mockPatients, mockAdmissions, mockMedicines, mockLabTests } from '@/data/mockData';
+import { useNavigate } from 'react-router-dom';
 
 export const DashboardOverview: React.FC = () => {
+  const navigate = useNavigate();
+  
   const activeAdmissions = mockAdmissions.filter(a => a.status === 'active').length;
   const pendingLabTests = mockLabTests.filter(t => t.status === 'pending').length;
   const lowStockMedicines = mockMedicines.filter(m => m.quantity <= m.reorderLevel).length;
@@ -15,28 +19,36 @@ export const DashboardOverview: React.FC = () => {
       value: mockPatients.length,
       icon: Users,
       description: 'Registered patients',
-      color: 'text-primary'
+      color: 'text-primary',
+      bgColor: 'bg-primary/10',
+      route: '/patients/outpatient'
     },
     {
       title: 'Active Admissions',
       value: activeAdmissions,
       icon: BedDouble,
       description: 'Currently admitted',
-      color: 'text-secondary'
+      color: 'text-secondary',
+      bgColor: 'bg-secondary/10',
+      route: '/patients/inpatient'
     },
     {
       title: 'Pending Lab Tests',
       value: pendingLabTests,
       icon: FlaskConical,
       description: 'Awaiting results',
-      color: 'text-info'
+      color: 'text-info',
+      bgColor: 'bg-info/10',
+      route: '/laboratory'
     },
     {
       title: 'Low Stock Items',
       value: lowStockMedicines,
       icon: Pill,
       description: 'Need reordering',
-      color: 'text-warning'
+      color: 'text-warning',
+      bgColor: 'bg-warning/10',
+      route: '/pharmacy'
     }
   ];
 
@@ -49,16 +61,27 @@ export const DashboardOverview: React.FC = () => {
 
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
         {stats.map((stat, index) => (
-          <Card key={index} className="hover:shadow-lg transition-shadow">
+          <Card 
+            key={index} 
+            className="hover:shadow-lg transition-all cursor-pointer group"
+            onClick={() => navigate(stat.route)}
+          >
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium text-muted-foreground">
                 {stat.title}
               </CardTitle>
-              <stat.icon className={`h-5 w-5 ${stat.color}`} />
+              <div className={`p-2 rounded-lg ${stat.bgColor}`}>
+                <stat.icon className={`h-5 w-5 ${stat.color}`} />
+              </div>
             </CardHeader>
             <CardContent>
-              <div className="text-3xl font-bold text-foreground">{stat.value}</div>
-              <p className="text-xs text-muted-foreground mt-1">{stat.description}</p>
+              <div className="flex items-end justify-between">
+                <div>
+                  <div className="text-3xl font-bold text-foreground">{stat.value}</div>
+                  <p className="text-xs text-muted-foreground mt-1">{stat.description}</p>
+                </div>
+                <ArrowRight className="h-5 w-5 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity" />
+              </div>
             </CardContent>
           </Card>
         ))}
