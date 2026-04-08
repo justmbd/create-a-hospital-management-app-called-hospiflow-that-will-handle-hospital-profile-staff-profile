@@ -1,14 +1,15 @@
 
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { UserPlus, Search, Mail, Phone, Edit, Trash2 } from 'lucide-react';
+import { UserPlus, Search, Mail, Phone, Edit, Trash2, Upload, X, User } from 'lucide-react';
 import { mockStaff } from '@/data/mockData';
 import { Staff, UserRole } from '@/types';
 import { toast } from 'sonner';
@@ -18,6 +19,8 @@ export const StaffManagement: React.FC = () => {
   const [staff, setStaff] = useState(mockStaff);
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [editingStaff, setEditingStaff] = useState<Staff | null>(null);
+  const [photoPreview, setPhotoPreview] = useState<string | null>(null);
+  const photoInputRef = useRef<HTMLInputElement>(null);
   
   // Form state
   const [formData, setFormData] = useState({
@@ -28,6 +31,7 @@ export const StaffManagement: React.FC = () => {
     email: '',
     phone: '',
     qualification: '',
+    photo: '' as string | undefined,
   });
 
   const resetForm = () => {
@@ -39,8 +43,47 @@ export const StaffManagement: React.FC = () => {
       email: '',
       phone: '',
       qualification: '',
+      photo: undefined,
     });
+    setPhotoPreview(null);
     setEditingStaff(null);
+    if (photoInputRef.current) {
+      photoInputRef.current.value = '';
+    }
+  };
+
+  const handlePhotoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    // Validate file type
+    if (!file.type.startsWith('image/')) {
+      toast.error('Please upload an image file');
+      return;
+    }
+
+    // Validate file size (max 5MB)
+    if (file.size > 5 * 1024 * 1024) {
+      toast.error('Image size should be less than 5MB');
+      return;
+    }
+
+    // Create preview
+    const reader = new FileReader();
+    reader.onloadend = () => {
+      const result = reader.result as string;
+      setPhotoPreview(result);
+      setFormData({ ...formData, photo: result });
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const handleRemovePhoto = () => {
+    setPhotoPreview(null);
+    setFormData({ ...formData, photo: undefined });
+    if (photoInputRef.current) {
+      photoInputRef.current.value = '';
+    }
   };
 
   const handleAddStaff = () => {
@@ -85,6 +128,7 @@ export const StaffManagement: React.FC = () => {
       qualification: formData.qualification,
       joinDate: new Date().toISOString().split('T')[0],
       status: 'active',
+      photo: formData.photo,
     };
 
     setStaff([...staff, newStaff]);
@@ -103,7 +147,9 @@ export const StaffManagement: React.FC = () => {
       email: member.email,
       phone: member.phone,
       qualification: member.qualification,
+      photo: member.photo,
     });
+    setPhotoPreview(member.photo || null);
   };
 
   const handleUpdateStaff = () => {
@@ -119,7 +165,7 @@ export const StaffManagement: React.FC = () => {
 
     const updatedStaff = staff.map(s => 
       s.id === editingStaff.id 
-        ? { ...s, ...formData, role: formData.role as UserRole }
+        ? { ...s, ...formData, role: formData.role as UserRole, photo: formData.photo }
         : s
     );
 
@@ -174,6 +220,49 @@ export const StaffManagement: React.FC = () => {
               <DialogDescription>Enter staff member information to add to the system</DialogDescription>
             </DialogHeader>
             <div className="grid gap-4 py-4">
+              <div className="space-y-2">
+                <Label>Staff Photo</Label>
+                <div className="flex items-center gap-4">
+                  <Avatar className="h-20 w-20">
+                    <AvatarImage src={photoPreview || undefined} alt="Staff Photo" />
+                    <AvatarFallback className="bg-muted">
+                      <User className="h-10 w-10 text-muted-foreground" />
+                    </AvatarFallback>
+                  </Avatar>
+                  <div className="flex flex-col gap-2">
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={() => photoInputRef.current?.click()}
+                    >
+                      <Upload className="h-4 w-4 mr-2" />
+                      Upload Photo
+                    </Button>
+                    {photoPreview && (
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        onClick={handleRemovePhoto}
+                      >
+                        <X className="h-4 w-4 mr-2" />
+                        Remove
+                      </Button>
+                    )}
+                    <input
+                      ref={photoInputRef}
+                      type="file"
+                      accept="image/*"
+                      onChange={handlePhotoUpload}
+                      className="hidden"
+                    />
+                  </div>
+                </div>
+                <p className="text-xs text-muted-foreground">
+                  Optional: Square image, max 5MB
+                </p>
+              </div>
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <Label htmlFor="firstName">First Name *</Label>
@@ -294,7 +383,15 @@ export const StaffManagement: React.FC = () => {
               {filteredStaff.map((member) => (
                 <TableRow key={member.id}>
                   <TableCell className="font-medium text-foreground">
-                    {member.firstName} {member.lastName}
+                    <div className="flex items-center gap-3">
+                      <Avatar className="h-8 w-8">
+                        <AvatarImage src={member.photo} alt={`${member.firstName} ${member.lastName}`} />
+                        <AvatarFallback className="bg-muted text-xs">
+                          {member.firstName[0]}{member.lastName[0]}
+                        </AvatarFallback>
+                      </Avatar>
+                      <span>{member.firstName} {member.lastName}</span>
+                    </div>
                   </TableCell>
                   <TableCell>
                     <Badge className={getRoleBadgeColor(member.role)}>
@@ -334,6 +431,46 @@ export const StaffManagement: React.FC = () => {
                             <DialogDescription>Update staff member information</DialogDescription>
                           </DialogHeader>
                           <div className="grid gap-4 py-4">
+                            <div className="space-y-2">
+                              <Label>Staff Photo</Label>
+                              <div className="flex items-center gap-4">
+                                <Avatar className="h-20 w-20">
+                                  <AvatarImage src={photoPreview || undefined} alt="Staff Photo" />
+                                  <AvatarFallback className="bg-muted">
+                                    <User className="h-10 w-10 text-muted-foreground" />
+                                  </AvatarFallback>
+                                </Avatar>
+                                <div className="flex flex-col gap-2">
+                                  <Button
+                                    type="button"
+                                    variant="outline"
+                                    size="sm"
+                                    onClick={() => photoInputRef.current?.click()}
+                                  >
+                                    <Upload className="h-4 w-4 mr-2" />
+                                    Upload Photo
+                                  </Button>
+                                  {photoPreview && (
+                                    <Button
+                                      type="button"
+                                      variant="outline"
+                                      size="sm"
+                                      onClick={handleRemovePhoto}
+                                    >
+                                      <X className="h-4 w-4 mr-2" />
+                                      Remove
+                                    </Button>
+                                  )}
+                                  <input
+                                    ref={photoInputRef}
+                                    type="file"
+                                    accept="image/*"
+                                    onChange={handlePhotoUpload}
+                                    className="hidden"
+                                  />
+                                </div>
+                              </div>
+                            </div>
                             <div className="grid grid-cols-2 gap-4">
                               <div className="space-y-2">
                                 <Label htmlFor="edit-firstName">First Name *</Label>

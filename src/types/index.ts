@@ -75,6 +75,7 @@ export interface Staff {
   qualification: string;
   joinDate: string;
   status: 'active' | 'inactive';
+  photo?: string;
 }
 
 export interface Medicine {

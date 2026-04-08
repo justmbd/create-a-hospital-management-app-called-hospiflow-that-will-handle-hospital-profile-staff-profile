@@ -22,6 +22,40 @@ export const HospitalProfile: React.FC = () => {
     setIsEditing(true);
   };
 
+  const handleLogoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    // Validate file type
+    if (!file.type.startsWith('image/')) {
+      toast.error('Please upload an image file');
+      return;
+    }
+
+    // Validate file size (max 5MB)
+    if (file.size > 5 * 1024 * 1024) {
+      toast.error('Image size should be less than 5MB');
+      return;
+    }
+
+    // Create preview
+    const reader = new FileReader();
+    reader.onloadend = () => {
+      const result = reader.result as string;
+      setLogoPreview(result);
+      setHospital({ ...hospital, logo: result });
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const handleRemoveLogo = () => {
+    setLogoPreview(null);
+    setHospital({ ...hospital, logo: undefined });
+    if (logoInputRef.current) {
+      logoInputRef.current.value = '';
+    }
+  };
+
   const handleSave = () => {
     // Validation
     if (!hospital.name.trim()) {
@@ -51,8 +85,28 @@ export const HospitalProfile: React.FC = () => {
 
   const handleCancel = () => {
     setHospital(originalHospital);
+    setLogoPreview(originalHospital.logo || null);
     setIsEditing(false);
     toast.info('Changes discarded');
+  };
+
+  const handleNewHospital = () => {
+    const resetHospital = {
+      id: '1',
+      name: '',
+      logo: undefined,
+      address: '',
+      phone: '',
+      email: '',
+      license: '',
+      accreditation: '',
+      operatingHours: ''
+    };
+    setHospital(resetHospital);
+    setOriginalHospital(resetHospital);
+    setLogoPreview(null);
+    setIsEditing(true);
+    toast.info('Ready to register new hospital');
   };
 
   return (
@@ -73,9 +127,14 @@ export const HospitalProfile: React.FC = () => {
               </Button>
             </>
           ) : (
-            <Button onClick={handleEdit}>
-              Edit Profile
-            </Button>
+            <>
+              <Button variant="outline" onClick={handleNewHospital}>
+                New Hospital
+              </Button>
+              <Button onClick={handleEdit}>
+                Edit Profile
+              </Button>
+            </>
           )}
         </div>
       </div>
@@ -90,6 +149,51 @@ export const HospitalProfile: React.FC = () => {
             <CardDescription>Hospital identification details</CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
+            <div className="space-y-2">
+              <Label>Hospital Logo</Label>
+              <div className="flex items-center gap-4">
+                <Avatar className="h-24 w-24 rounded-lg">
+                  <AvatarImage src={logoPreview || undefined} alt="Hospital Logo" />
+                  <AvatarFallback className="rounded-lg bg-muted">
+                    <Building2 className="h-12 w-12 text-muted-foreground" />
+                  </AvatarFallback>
+                </Avatar>
+                {isEditing && (
+                  <div className="flex flex-col gap-2">
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={() => logoInputRef.current?.click()}
+                    >
+                      <Upload className="h-4 w-4 mr-2" />
+                      Upload Logo
+                    </Button>
+                    {logoPreview && (
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        onClick={handleRemoveLogo}
+                      >
+                        <X className="h-4 w-4 mr-2" />
+                        Remove
+                      </Button>
+                    )}
+                    <input
+                      ref={logoInputRef}
+                      type="file"
+                      accept="image/*"
+                      onChange={handleLogoUpload}
+                      className="hidden"
+                    />
+                  </div>
+                )}
+              </div>
+              <p className="text-xs text-muted-foreground">
+                Recommended: Square image, max 5MB
+              </p>
+            </div>
             <div className="space-y-2">
               <Label htmlFor="name">Hospital Name</Label>
               <Input
