@@ -8,8 +8,9 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { BedDouble, UserPlus } from 'lucide-react';
+import { BedDouble, UserPlus, LogOut } from 'lucide-react';
 import { mockAdmissions, mockPatients, mockStaff } from '@/data/mockData';
 import { Admission } from '@/types';
 import { format } from 'date-fns';
@@ -18,6 +19,7 @@ import { toast } from 'sonner';
 export const InpatientModule: React.FC = () => {
   const [admissions, setAdmissions] = useState(mockAdmissions);
   const [isAdmitDialogOpen, setIsAdmitDialogOpen] = useState(false);
+  const [dischargeAdmissionId, setDischargeAdmissionId] = useState<string | null>(null);
   
   // Form state
   const [formData, setFormData] = useState({
@@ -96,6 +98,22 @@ export const InpatientModule: React.FC = () => {
     toast.success('Patient admitted successfully');
     setIsAdmitDialogOpen(false);
     resetForm();
+  };
+
+  const handleDischargePatient = (admissionId: string) => {
+    const admission = admissions.find(a => a.id === admissionId);
+    if (!admission) return;
+    
+    const updatedAdmissions = admissions.map(a => 
+      a.id === admissionId 
+        ? { ...a, status: 'discharged' as const, dischargeDate: new Date().toISOString().split('T')[0] }
+        : a
+    );
+    
+    setAdmissions(updatedAdmissions);
+    const patient = getPatientName(admission.patientId);
+    toast.success(`${patient} discharged successfully`);
+    setDischargeAdmissionId(null);
   };
 
   return (
@@ -261,6 +279,7 @@ export const InpatientModule: React.FC = () => {
                 <TableHead>Admission Date</TableHead>
                 <TableHead>Diagnosis</TableHead>
                 <TableHead>Status</TableHead>
+                <TableHead>Actions</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -278,6 +297,16 @@ export const InpatientModule: React.FC = () => {
                   <TableCell className="text-muted-foreground">{admission.diagnosis}</TableCell>
                   <TableCell>
                     <Badge className="bg-secondary text-secondary-foreground">Active</Badge>
+                  </TableCell>
+                  <TableCell>
+                    <Button 
+                      variant="outline" 
+                      size="sm"
+                      onClick={() => setDischargeAdmissionId(admission.id)}
+                    >
+                      <LogOut className="h-4 w-4 mr-2" />
+                      Discharge
+                    </Button>
                   </TableCell>
                 </TableRow>
               ))}
@@ -324,6 +353,26 @@ export const InpatientModule: React.FC = () => {
           </Table>
         </CardContent>
       </Card>
+
+      {/* Discharge Confirmation Dialog */}
+      <AlertDialog open={!!dischargeAdmissionId} onOpenChange={() => setDischargeAdmissionId(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Discharge Patient</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to discharge this patient? This will mark the admission as complete and free up the bed. Make sure all discharge procedures and paperwork are completed.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction 
+              onClick={() => dischargeAdmissionId && handleDischargePatient(dischargeAdmissionId)}
+            >
+              Discharge Patient
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 };

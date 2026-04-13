@@ -7,10 +7,11 @@ import { Badge } from '@/components/ui/badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { UserPlus, Search, Calendar, Clock, FileText, Stethoscope, Activity } from 'lucide-react';
+import { UserPlus, Search, Calendar, Clock, FileText, Stethoscope, Activity, Trash2 } from 'lucide-react';
 import { mockPatients, mockPrescriptions, mockLabTests } from '@/data/mockData';
 import { Patient } from '@/types';
 import { format } from 'date-fns';
@@ -21,6 +22,7 @@ export const OutpatientModule: React.FC = () => {
   const [selectedPatient, setSelectedPatient] = useState<string | null>(null);
   const [patients, setPatients] = useState(mockPatients);
   const [isRegisterDialogOpen, setIsRegisterDialogOpen] = useState(false);
+  const [deletePatientId, setDeletePatientId] = useState<string | null>(null);
 
   // Registration form state
   const [regForm, setRegForm] = useState({
@@ -111,6 +113,18 @@ export const OutpatientModule: React.FC = () => {
     toast.success(`${regForm.firstName} ${regForm.lastName} registered successfully`);
     setIsRegisterDialogOpen(false);
     resetRegForm();
+  };
+
+  const handleDeletePatient = (patientId: string) => {
+    const patient = patients.find(p => p.id === patientId);
+    if (!patient) return;
+    
+    setPatients(patients.filter(p => p.id !== patientId));
+    toast.success(`${patient.firstName} ${patient.lastName} deleted successfully`);
+    setDeletePatientId(null);
+    if (selectedPatient === patientId) {
+      setSelectedPatient(null);
+    }
   };
 
   const filteredPatients = patients.filter(p =>
@@ -403,13 +417,14 @@ export const OutpatientModule: React.FC = () => {
                           </Badge>
                         </TableCell>
                         <TableCell>
-                          <Dialog>
-                            <DialogTrigger asChild>
-                              <Button variant="outline" size="sm" onClick={() => setSelectedPatient(patient.id)}>
-                                View Details
-                              </Button>
-                            </DialogTrigger>
-                            <DialogContent className="max-w-3xl max-h-[80vh] overflow-y-auto">
+                          <div className="flex gap-2">
+                            <Dialog>
+                              <DialogTrigger asChild>
+                                <Button variant="outline" size="sm" onClick={() => setSelectedPatient(patient.id)}>
+                                  View Details
+                                </Button>
+                              </DialogTrigger>
+                              <DialogContent className="max-w-3xl max-h-[80vh] overflow-y-auto">
                               <DialogHeader>
                                 <DialogTitle>Patient Details - {patient.firstName} {patient.lastName}</DialogTitle>
                                 <DialogDescription>Complete patient information and medical history</DialogDescription>
@@ -535,6 +550,14 @@ export const OutpatientModule: React.FC = () => {
                               </div>
                             </DialogContent>
                           </Dialog>
+                          <Button 
+                            variant="destructive" 
+                            size="sm"
+                            onClick={() => setDeletePatientId(patient.id)}
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                          </div>
                         </TableCell>
                       </TableRow>
                     );
@@ -640,6 +663,27 @@ export const OutpatientModule: React.FC = () => {
           </Card>
         </TabsContent>
       </Tabs>
+
+      {/* Delete Patient Confirmation Dialog */}
+      <AlertDialog open={!!deletePatientId} onOpenChange={() => setDeletePatientId(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete Patient Record</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to delete this patient record? This action cannot be undone and will permanently remove all patient data including medical history, prescriptions, and lab results.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction 
+              onClick={() => deletePatientId && handleDeletePatient(deletePatientId)}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              Delete Patient
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 };

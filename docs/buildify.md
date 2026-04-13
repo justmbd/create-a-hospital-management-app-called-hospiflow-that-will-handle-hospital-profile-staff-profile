@@ -42,10 +42,18 @@
   - [x] Add hospital logo upload functionality
   - [x] Implement data reset on new hospital registration
   - [x] Add staff photo upload during registration
-- [ ] Implement state management for data persistence
-- [ ] Add form validation and error handling
-- [ ] Create confirmation dialogs for critical actions
-- [ ] Setup Supabase integration for data persistence
+- [ ] Add confirmation dialogs for critical actions (delete patient, discharge admission)
+- [ ] Implement edit/update functionality for admissions, medicines, and lab tests
+- [ ] Setup Supabase integration for persistent data storage
+  - [ ] Create database schema for all entities
+  - [ ] Setup Supabase client configuration
+  - [ ] Migrate mock data to Supabase
+  - [ ] Update all modules to use Supabase
 - [ ] Create appointment scheduling system
+  - [ ] Build appointment booking interface
+  - [ ] Add calendar view for appointments
+  - [ ] Implement appointment reminders
 - [ ] Build billing and invoicing module
-- [ ] Create reporting and analytics dashboard
+  - [ ] Create invoice generation system
+  - [ ] Add payment tracking
+  - [ ] Build billing reports
