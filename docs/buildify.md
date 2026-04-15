@@ -42,7 +42,7 @@
   - [x] Add hospital logo upload functionality
   - [x] Implement data reset on new hospital registration
   - [x] Add staff photo upload during registration
-- [ ] Add confirmation dialogs for critical actions (delete patient, discharge admission)
+- [x] Add confirmation dialogs for critical actions (delete patient, discharge admission)
 - [ ] Implement edit/update functionality for admissions, medicines, and lab tests
 - [ ] Setup Supabase integration for persistent data storage
   - [ ] Create database schema for all entities
